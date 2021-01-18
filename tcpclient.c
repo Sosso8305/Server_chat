@@ -1,54 +1,93 @@
-/**
-	Simple TCP client to fetch a web page
-*/
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <arpa/inet.h>
 
-#include<stdio.h>
-#include<string.h>	//strlen
-#include<sys/socket.h>
-#include<arpa/inet.h>	//inet_addr
+#define SERVER "127.0.0.1"
+#define PORT 8888
+#define BUFSIZE  512
+#define NAMESIZE 10
 
-int main(int argc , char *argv[])
-{
-	int socket_desc;
-	struct sockaddr_in server;
-	char *message , server_reply[512];
-	
-	//Create socket
-	socket_desc = socket(AF_INET , SOCK_STREAM , 0);
-	if (socket_desc == -1)
-	{
-		printf("Could not create socket");
-	}
-	
-	server.sin_addr.s_addr = inet_addr("127.0.0.1");
-	server.sin_family = AF_INET;
-	server.sin_port = htons( 8000 );
-
-	//Connect to remote server
-	if (connect(socket_desc , (struct sockaddr *)&server , sizeof(server)) < 0)
-	{
-		puts("connect error");
-		return 1;
-	}
-	
-	puts("Connected\n");
-    int n;
-	while(1){
-        //Receive a reply from the server
-        if( (n=recv(socket_desc, server_reply , 511 , 0)) == -1)
-        {
-            perror("rcv");
-            break;
-        }
-        if(n==0){
-            puts("client disconnected");
-            break;
-        }
-        server_reply[n]='\0';
-        puts("Reply received\n");
-        puts(server_reply);
-        
-        
+void isEnd(char *msg, int * END){
+    if(strcmp(msg,"exit") == 0){
+       // printf("[%d] End connection \n",getpid());
+        *END = 1;
     }
-	return 0;
+    
+
+}
+
+void stop(char* msg,int FD){
+	perror(msg);
+    close(FD);
+	exit(EXIT_FAILURE);
+	
+}
+
+
+int main(int argc, char const *argv[])
+{
+    char buff[BUFSIZE];
+    char name[NAMESIZE];
+    char msg[BUFSIZE - NAMESIZE];
+    int END = 0;
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd == -1) stop("socket",sockfd);
+    struct sockaddr_in serv_addr;
+    int len=sizeof(serv_addr);
+    int pid;
+
+    bzero(&serv_addr,sizeof(serv_addr));
+	serv_addr.sin_family = AF_INET;
+    inet_aton(SERVER,&serv_addr.sin_addr);
+    serv_addr.sin_port = htons(PORT);
+    
+   
+    if (connect(sockfd,(const struct sockaddr *)&serv_addr,(socklen_t )len) < 0) stop("Connect",sockfd);
+
+    printf("Name (max %d lettre):",NAMESIZE-3);
+    fflush(stdout);
+    scanf("%[^\n]",name);
+    fgetc( stdin );
+    strcat(name,": ");
+
+    printf("Ecrivez vos messages \n");
+    if ((pid = fork()) < 0) stop("fork petit",sockfd);
+
+    while(END == 0){
+        
+        if (pid !=0){
+            //pere
+            bzero(&buff,BUFSIZE);
+            fflush(stdout);
+            scanf("%[^\n]",msg);
+            strcat(buff,name);
+            strcat(buff,msg);
+            send(sockfd,buff,BUFSIZE,0);
+            fgetc( stdin );
+        }
+        else{
+            //fils
+            int n =recv(sockfd,buff,BUFSIZE,0);
+            if (n == -1)  stop("recv",sockfd);
+            if (n == 0) break;
+            buff[n]='\0';
+            printf("\n%s\n",buff);
+        }
+
+        isEnd(buff,&END);
+
+    }
+
+    close(sockfd);
+
+    if (pid==0) printf("End connection \n");
+
+    return 0;
 }
