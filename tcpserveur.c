@@ -16,6 +16,34 @@
 #define TRUE   1
 #define FALSE  0
 #define PORT 8888
+#define NAMESIZE 10
+
+void ChangeName(int socket,char * name, char ** listName, int maxClient,int numero_tab){
+    char * NoValid = "NO";
+    char * Valid  = "OK";
+    int check = 0;
+    bzero(name,NAMESIZE);
+    recv(socket,name,NAMESIZE,0);
+    printf("%s\n",name);
+
+    // for (int i = 0;i<maxClient; i++){
+    //     if(strcmp(listName[i],name)){
+    //         send(socket,NoValid,strlen(NoValid),0);
+    //         check =1;
+    //         break;
+    //     }
+    // }
+
+    // if (check){
+    //     ChangeName(socket,name,listName,maxClient,numero_tab);
+    // }
+    // else{
+        send(socket,Valid,strlen(Valid),0);
+        strcpy(listName[numero_tab],name);
+    // }
+
+}
+
 
 int main(int argc , char *argv[])
 {
@@ -23,8 +51,15 @@ int main(int argc , char *argv[])
     int master_socket , addrlen , new_socket , client_socket[30] , max_clients = 30 , activity, i , valread , sd;
 	int max_sd;
     struct sockaddr_in address;
+    char name[NAMESIZE];
      
     char buffer[1025];  //data buffer of 1K
+    char * TableName[max_clients];
+
+    //init tableName
+    for (int i = 0; i<max_clients; i++){
+        TableName[i] = malloc(sizeof(char)*NAMESIZE);
+    }
      
     //set of socket descriptors
     fd_set readfds;
@@ -116,17 +151,14 @@ int main(int argc , char *argv[])
                 perror("accept");
                 exit(EXIT_FAILURE);
             }
-         
+
+
+
+
             //inform user of socket number - used in send and receive commands
             printf("New connection , socket fd is %d , ip is : %s , port : %d \n" , new_socket , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));
        
-            //send new connection greeting message
-            if( send(new_socket, message, strlen(message), 0) != strlen(message) ) 
-            {
-                perror("send");
-            }
-             
-            puts("Welcome message sent successfully");
+           
              
             //add new socket to array of sockets
             for (i = 0; i < max_clients; i++) 
@@ -134,12 +166,22 @@ int main(int argc , char *argv[])
                 //if position is empty
 				if( client_socket[i] == 0 )
                 {
+
+                    ChangeName(new_socket,name,TableName,max_clients,i);
                     client_socket[i] = new_socket;
                     printf("Adding to list of sockets as %d\n" , i);
 					
 					break;
                 }
             }
+
+             //send new connection greeting message
+            if( send(new_socket,message, strlen(message), 0) != strlen(message) ) 
+            {
+                perror("send");
+            }
+             
+            puts("Welcome message sent successfully");
         }
          
         //else its some IO operation on some other socket :)
@@ -166,12 +208,20 @@ int main(int argc , char *argv[])
                 {
                     //set the string terminating NULL byte on the end of the data read
                     buffer[valread] = '\0';
+
+                    if(strcmp(buffer,"/listName")){
+                        for (i= 0; i < max_clients; i++){
+                            printf("%s\n",TableName[i]);
+                        }
+                    }
                      
-                    int sdd;
-                    for (i= 0; i < max_clients; i++){
-                        sdd = client_socket [i];
-                        if (sdd != sd && sdd != 0){
-                            send(sdd,buffer,strlen(buffer),0);
+                    else {
+                        int sdd;
+                        for (i= 0; i < max_clients; i++){
+                            sdd = client_socket [i];
+                            if (sdd != sd && sdd != 0){
+                                send(sdd,buffer,strlen(buffer),0);
+                            }
                         }
                     }
                 }

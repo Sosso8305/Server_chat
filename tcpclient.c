@@ -30,6 +30,28 @@ void stop(char* msg,int FD){
 	
 }
 
+void ChangeName(int socket,char * name){
+
+    char Rep[3];
+    printf("Name (max %d lettre):",NAMESIZE-3);
+    fflush(stdout);
+    scanf("%[^\n]",name);
+    fgetc( stdin );
+    send(socket,name,NAMESIZE,0);
+
+    int n = recv(socket,Rep,2,0);
+    Rep[n]='\0';
+
+    printf("%s\n",Rep);
+
+    if(strcmp(Rep,"NO")){
+        ChangeName(socket,name);
+    }
+    else{
+        strcat(name,": ");
+    }
+}
+
 
 int main(int argc, char const *argv[])
 {
@@ -51,11 +73,7 @@ int main(int argc, char const *argv[])
    
     if (connect(sockfd,(const struct sockaddr *)&serv_addr,(socklen_t )len) < 0) stop("Connect",sockfd);
 
-    printf("Name (max %d lettre):",NAMESIZE-3);
-    fflush(stdout);
-    scanf("%[^\n]",name);
-    fgetc( stdin );
-    strcat(name,": ");
+    ChangeName(sockfd,name);
 
     printf("Ecrivez vos messages \n");
     if ((pid = fork()) < 0) stop("fork petit",sockfd);
