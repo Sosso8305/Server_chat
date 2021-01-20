@@ -24,23 +24,23 @@ void ChangeName(int socket,char * name, char ** listName, int maxClient,int nume
     int check = 0;
     bzero(name,NAMESIZE);
     recv(socket,name,NAMESIZE,0);
-    printf("%s\n",name);
+    printf("name users: %s\n",name);
 
-    // for (int i = 0;i<maxClient; i++){
-    //     if(strcmp(listName[i],name)){
-    //         send(socket,NoValid,strlen(NoValid),0);
-    //         check =1;
-    //         break;
-    //     }
-    // }
+    for (int i = 0;i<maxClient; i++){
+        if(!strcmp(listName[i],name)){
+            send(socket,NoValid,strlen(NoValid),0);
+            check =1;
+            break;
+        }
+    }
 
-    // if (check){
-    //     ChangeName(socket,name,listName,maxClient,numero_tab);
-    // }
-    // else{
+    if (check){
+        ChangeName(socket,name,listName,maxClient,numero_tab);
+    }
+    else{
         send(socket,Valid,strlen(Valid),0);
         strcpy(listName[numero_tab],name);
-    // }
+   }
 
 }
 
@@ -52,6 +52,7 @@ int main(int argc , char *argv[])
 	int max_sd;
     struct sockaddr_in address;
     char name[NAMESIZE];
+    char msg[1025];
      
     char buffer[1025];  //data buffer of 1K
     char * TableName[max_clients];
@@ -192,7 +193,7 @@ int main(int argc , char *argv[])
             if (FD_ISSET( sd , &readfds)) 
             {
                 //Check if it was for closing , and also read the incoming message
-                if ((valread = read( sd , buffer, 1024)) == 0)
+                if ((valread = read( sd , msg, 1024)) == 0)
                 {
                     //Somebody disconnected , get his details and print
                     getpeername(sd , (struct sockaddr*)&address , (socklen_t*)&addrlen);
@@ -201,21 +202,30 @@ int main(int argc , char *argv[])
                     //Close the socket and mark as 0 in list for reuse
                     close( sd );
                     client_socket[i] = 0;
+                    bzero(TableName[i],NAMESIZE);
                 }
                  
                 //Echo back the message that came in
                 else
                 {
                     //set the string terminating NULL byte on the end of the data read
-                    buffer[valread] = '\0';
+                    msg[valread] = '\0';
 
-                    if(strcmp(buffer,"/listName")){
+                    if(!strcmp(buffer,"/list")){
                         for (i= 0; i < max_clients; i++){
                             printf("%s\n",TableName[i]);
                         }
                     }
                      
                     else {
+                        
+                        bzero(name,NAMESIZE);
+                        bzero(buffer,1025);
+                        strcat(name,TableName[i]);
+                        strcat(name,": ");
+                        strcat(buffer,name);
+                        strcat(buffer,msg);
+
                         int sdd;
                         for (i= 0; i < max_clients; i++){
                             sdd = client_socket [i];

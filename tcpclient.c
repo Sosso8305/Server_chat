@@ -44,12 +44,12 @@ void ChangeName(int socket,char * name){
 
     printf("%s\n",Rep);
 
-    if(strcmp(Rep,"NO")){
+    if(!strcmp(Rep,"NO")){
         ChangeName(socket,name);
     }
-    else{
-        strcat(name,": ");
-    }
+    // else{
+    //     strcat(name,": ");
+    // }
 }
 
 
@@ -85,7 +85,7 @@ int main(int argc, char const *argv[])
             bzero(&buff,BUFSIZE);
             fflush(stdout);
             scanf("%[^\n]",msg);
-            strcat(buff,name);
+            //strcat(buff,name);
             strcat(buff,msg);
             send(sockfd,buff,BUFSIZE,0);
             fgetc( stdin );
