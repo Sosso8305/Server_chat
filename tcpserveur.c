@@ -233,11 +233,13 @@ int main(int argc , char *argv[])
                 {
                     //set the string terminating NULL byte on the end of the data read
                     msg[valread] = '\0';
-                    
+                    char slash ='/';
                     char * delim=" ";
                     char msg2[1025] ;
                     strcpy(msg2,msg);
                     char * ptr=strtok(msg2,delim);
+                    
+                    
 
                     if(!strcmp(msg,"/list")){
                         puts("User's list: ");
@@ -255,10 +257,13 @@ int main(int argc , char *argv[])
                         if(!ptr) {
                             char * cmd = "command: /nick <name>";
                             send(sd,cmd,strlen(cmd),0);
-                
                         }
-
                         else ChangeName(sd,ptr,TableName,number_curr_users,i);
+                    }
+
+                    else if (slash == msg[0]){
+                        char * err = "Command don't exist";
+                        send(sd,err,strlen(err),0);
                     }
                      
                     else {
