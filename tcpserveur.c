@@ -53,6 +53,7 @@ int main(int argc , char *argv[])
     struct sockaddr_in address;
     char name[NAMESIZE];
     char msg[1025];
+    int number_curr_users = 0;
      
     char buffer[1025];  //data buffer of 1K
     char * TableName[max_clients];
@@ -170,6 +171,7 @@ int main(int argc , char *argv[])
 
                     ChangeName(new_socket,name,TableName,max_clients,i);
                     client_socket[i] = new_socket;
+                    number_curr_users++;
                     printf("Adding to list of sockets as %d\n" , i);
 					
 					break;
@@ -203,6 +205,7 @@ int main(int argc , char *argv[])
                     close( sd );
                     client_socket[i] = 0;
                     bzero(TableName[i],NAMESIZE);
+                    number_curr_users--;
                 }
                  
                 //Echo back the message that came in
@@ -211,10 +214,15 @@ int main(int argc , char *argv[])
                     //set the string terminating NULL byte on the end of the data read
                     msg[valread] = '\0';
 
-                    if(!strcmp(buffer,"/list")){
-                        for (i= 0; i < max_clients; i++){
+                    if(!strcmp(msg,"/list")){
+                        puts("User's list: ");
+                        bzero(buffer,1025);
+                        for (i= 0; i < number_curr_users; i++){
                             printf("%s\n",TableName[i]);
+                            strcat(buffer,TableName[i]);
+                            strcat(buffer,"\n");
                         }
+                        send(sd,buffer,1024,0);
                     }
                      
                     else {
