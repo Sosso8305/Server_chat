@@ -42,9 +42,10 @@ void ChangeName(int socket,char * name){
     int n = recv(socket,Rep,2,0);
     Rep[n]='\0';
 
-    printf("%s\n",Rep);
+    //printf("%s\n",Rep);
 
     if(!strcmp(Rep,"NO")){
+        puts("Name already used");
         ChangeName(socket,name);
     }
     // else{
