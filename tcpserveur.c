@@ -261,6 +261,19 @@ int main(int argc , char *argv[])
                         else ChangeName(sd,ptr,TableName,number_curr_users,i);
                     }
 
+                    else if(!strcmp(msg,"@all")){
+                        char * beep ="Beep";
+
+                        int sdd;
+                        for (i= 0; i < number_curr_users; i++){
+                            sdd = client_socket [i];
+                            if (sdd != sd && sdd != 0){
+                                send(sdd,beep,strlen(beep),0);
+                            }
+                        }
+
+                    }
+
                     else if (slash == msg[0]){
                         char * err = "Command don't exist";
                         send(sd,err,strlen(err),0);

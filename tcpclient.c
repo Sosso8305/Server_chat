@@ -97,7 +97,9 @@ int main(int argc, char const *argv[])
             if (n == -1)  stop("recv",sockfd);
             if (n == 0) break;
             buff[n]='\0';
-            printf("\n%s\n",buff);
+            if(!strcmp(buff,"Beep")) system("echo  '\a'");
+            
+            else printf("\n%s\n",buff);
         }
 
         isEnd(buff,&END);
