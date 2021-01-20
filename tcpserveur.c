@@ -19,6 +19,26 @@
 #define NAMESIZE 10
 
 void ChangeName(int socket,char * name, char ** listName, int maxClient,int numero_tab){
+    char * Success = "Change name is a success";
+    char * Fail = "name already used, check /list";
+    int check = 0;
+
+    for (int i = 0;i<maxClient; i++){
+        if(!strcmp(listName[i],name)){
+            send(socket,Fail,strlen(Fail),0);
+            check=1;
+            break;
+        }
+    }
+
+    if(!check){
+        strcpy(listName[numero_tab],name);
+        send(socket,Success,strlen(Success),0);
+    }
+
+}
+
+void Name(int socket,char * name, char ** listName, int maxClient,int numero_tab){
     char * NoValid = "NO";
     char * Valid  = "OK";
     int check = 0;
@@ -35,7 +55,7 @@ void ChangeName(int socket,char * name, char ** listName, int maxClient,int nume
     }
 
     if (check){
-        ChangeName(socket,name,listName,maxClient,numero_tab);
+        Name(socket,name,listName,maxClient,numero_tab);
     }
     else{
         send(socket,Valid,strlen(Valid),0);
@@ -169,7 +189,7 @@ int main(int argc , char *argv[])
 				if( client_socket[i] == 0 )
                 {
 
-                    ChangeName(new_socket,name,TableName,max_clients,i);
+                    Name(new_socket,name,TableName,max_clients,i);
                     client_socket[i] = new_socket;
                     number_curr_users++;
                     printf("Adding to list of sockets as %d\n" , i);
@@ -204,7 +224,7 @@ int main(int argc , char *argv[])
                     //Close the socket and mark as 0 in list for reuse
                     close( sd );
                     client_socket[i] = 0;
-                    bzero(TableName[i],NAMESIZE);
+                    TableName[i] =NULL;
                     number_curr_users--;
                 }
                  
@@ -213,6 +233,11 @@ int main(int argc , char *argv[])
                 {
                     //set the string terminating NULL byte on the end of the data read
                     msg[valread] = '\0';
+                    
+                    char * delim=" ";
+                    char msg2[1025] ;
+                    strcpy(msg2,msg);
+                    char * ptr=strtok(msg2,delim);
 
                     if(!strcmp(msg,"/list")){
                         puts("User's list: ");
@@ -223,6 +248,17 @@ int main(int argc , char *argv[])
                             strcat(buffer,"\n");
                         }
                         send(sd,buffer,1024,0);
+                    }
+
+                    else if(!strcmp(ptr,"/nick")){    
+                        ptr = strtok(NULL,delim);
+                        if(!ptr) {
+                            char * cmd = "command: /nick <name>";
+                            send(sd,cmd,strlen(cmd),0);
+                
+                        }
+
+                        else ChangeName(sd,ptr,TableName,number_curr_users,i);
                     }
                      
                     else {

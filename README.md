@@ -3,4 +3,6 @@ TD13 & TD14 INSA
 
 list des commande:
 
-/list pour obtenir la list des utilisateurs 
+/list -> pour obtenir la list des utilisateurs
+
+/nick <name> -> pour changer de prénom 

@@ -30,7 +30,7 @@ void stop(char* msg,int FD){
 	
 }
 
-void ChangeName(int socket,char * name){
+void Name(int socket,char * name){
 
     char Rep[3];
     printf("Name (max %d lettre):",NAMESIZE-3);
@@ -46,7 +46,7 @@ void ChangeName(int socket,char * name){
 
     if(!strcmp(Rep,"NO")){
         puts("Name already used");
-        ChangeName(socket,name);
+        Name(socket,name);
     }
     // else{
     //     strcat(name,": ");
@@ -74,7 +74,7 @@ int main(int argc, char const *argv[])
    
     if (connect(sockfd,(const struct sockaddr *)&serv_addr,(socklen_t )len) < 0) stop("Connect",sockfd);
 
-    ChangeName(sockfd,name);
+    Name(sockfd,name);
 
     printf("Ecrivez vos messages \n");
     if ((pid = fork()) < 0) stop("fork petit",sockfd);
