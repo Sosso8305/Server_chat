@@ -8,8 +8,8 @@ all: $(CIBLES)
 clean:
 	$(RM) -f core *.o $(CIBLES) *~
 
-run_serveur:
+run_serveur: clean all
 	./serveur
 
-run_client:
+run_client: all
 	./client

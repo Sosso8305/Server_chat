@@ -31,26 +31,26 @@ void stop(char* msg,int FD){
 }
 
 void Name(int socket,char * name){
-
-    char Rep[3];
+    char * Fail = "name already used, check /list";
+    char * nick ="/nick ";
+    char Buff[BUFSIZE];
     printf("Name (max %d lettre):",NAMESIZE-3);
     fflush(stdout);
     scanf("%[^\n]",name);
     fgetc( stdin );
-    send(socket,name,NAMESIZE,0);
+    bzero(Buff,BUFSIZE);
+    strcat(Buff,nick);
+    strcat(Buff,name);
+    send(socket,Buff,BUFSIZE,0);
 
-    int n = recv(socket,Rep,2,0);
-    Rep[n]='\0';
+    int n = recv(socket,Buff,31,0);
+    Buff[n]='\0';
 
-    //printf("%s\n",Rep);
-
-    if(!strcmp(Rep,"NO")){
+    if( !strncmp(Buff,Fail,strlen(Fail)) ){
         puts("Name already used");
         Name(socket,name);
     }
-    // else{
-    //     strcat(name,": ");
-    // }
+
 }
 
 
@@ -74,6 +74,9 @@ int main(int argc, char const *argv[])
    
     if (connect(sockfd,(const struct sockaddr *)&serv_addr,(socklen_t )len) < 0) stop("Connect",sockfd);
 
+    int n =recv(sockfd,buff,BUFSIZE,0);
+    buff[n]='\0';
+    printf("\n%s\n",buff);
     Name(sockfd,name);
 
     printf("Ecrivez vos messages \n");
@@ -97,7 +100,7 @@ int main(int argc, char const *argv[])
             if (n == -1)  stop("recv",sockfd);
             if (n == 0) break;
             buff[n]='\0';
-            if(!strcmp(buff,"Beep")) system("echo  '\a'");
+            if(!strcmp(buff,"Beep")) putchar('\a');
             
             else printf("\n%s\n",buff);
         }

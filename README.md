@@ -10,4 +10,5 @@ list des commande:
 
 absorbe les mauvaise commande.
 
-@all fonction mais une erreur mémoire quelsque part
+@all fonctionnais il y a 2 jours ouin ouin
+(j'y revindrais plus tard)

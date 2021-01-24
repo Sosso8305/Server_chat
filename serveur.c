@@ -19,7 +19,7 @@
 #define NAMESIZE 10
 
 void ChangeName(int socket,char * name, char ** listName, int maxClient,int numero_tab){
-    char * Success = "Change name is a success";
+    char * Success = "Change name is a success      ";
     char * Fail = "name already used, check /list";
     int check = 0;
 
@@ -38,31 +38,32 @@ void ChangeName(int socket,char * name, char ** listName, int maxClient,int nume
 
 }
 
-void Name(int socket,char * name, char ** listName, int maxClient,int numero_tab){
-    char * NoValid = "NO";
-    char * Valid  = "OK";
-    int check = 0;
-    bzero(name,NAMESIZE);
-    recv(socket,name,NAMESIZE,0);
-    printf("name users: %s\n",name);
+// @old_methode
+// void Name(int socket,char * name, char ** listName, int maxClient,int numero_tab){
+//     char * NoValid = "NO";
+//     char * Valid  = "OK";
+//     int check = 0;
+//     bzero(name,NAMESIZE);
+//     recv(socket,name,NAMESIZE,0);
+//     printf("name users: %s\n",name);
 
-    for (int i = 0;i<maxClient; i++){
-        if(!strcmp(listName[i],name)){
-            send(socket,NoValid,strlen(NoValid),0);
-            check =1;
-            break;
-        }
-    }
+//     for (int i = 0;i<maxClient; i++){
+//         if(!strcmp(listName[i],name)){
+//             send(socket,NoValid,strlen(NoValid),0);
+//             check =1;
+//             break;
+//         }
+//     }
 
-    if (check){
-        Name(socket,name,listName,maxClient,numero_tab);
-    }
-    else{
-        send(socket,Valid,strlen(Valid),0);
-        strcpy(listName[numero_tab],name);
-   }
+//     if (check){
+//         Name(socket,name,listName,maxClient,numero_tab);
+//     }
+//     else{
+//         send(socket,Valid,strlen(Valid),0);
+//         strcpy(listName[numero_tab],name);
+//    }
 
-}
+// }
 
 
 int main(int argc , char *argv[])
@@ -189,11 +190,12 @@ int main(int argc , char *argv[])
 				if( client_socket[i] == 0 )
                 {
 
-                    Name(new_socket,name,TableName,max_clients,i);
+                    //Name(new_socket,name,TableName,max_clients,i);
+                    
                     client_socket[i] = new_socket;
                     number_curr_users++;
                     printf("Adding to list of sockets as %d\n" , i);
-					
+					//strcpy(TableName[i],"User");
 					break;
                 }
             }
