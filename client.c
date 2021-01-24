@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
 
 #define SERVER "127.0.0.1"
 #define PORT 8888
@@ -100,7 +101,25 @@ int main(int argc, char const *argv[])
             if (n == -1)  stop("recv",sockfd);
             if (n == 0) break;
             buff[n]='\0';
+
+            char * delim=" ";
+            char msg2[1025] ;
+            strcpy(msg2,buff);
+            char * ptr=strtok(msg2,delim);
+
             if(!strcmp(buff,"Beep")) putchar('\a');
+
+            else if(!strcmp(ptr,"/file")){
+                char * ptr=strtok(msg2,delim);
+                int fd,n;
+
+                if ( (fd = open(ptr,O_RDONLY)) == -1) perror("open src");
+
+                while ((n = read(fd,buff,BUFSIZE))){
+                    send(sockfd,buff,n,0);
+
+                }
+            }
             
             else printf("\n%s\n",buff);
         }

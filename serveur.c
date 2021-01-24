@@ -17,7 +17,45 @@
 #define FALSE  0
 #define PORT 8888
 #define NAMESIZE 10
-#define DEBUG 1
+#define MaxFile 3
+#define DEBUG 0
+
+void SendFile(int socket,char * name,char * file,char ** listName,int * Csocket,int maxClient, int nb_sender, char * TableFile[MaxFile][4],int * nbFile){
+    int check=0;
+    char * Fail ="Your friend don't exist or it's you";
+    char * Success = "Send /accept or /decline with a name ";
+
+     for (int i = 0; i<MaxFile; i++){
+        bzero(TableFile[*nbFile][i],1025);
+    }
+
+
+
+    for(int i = 0; i<maxClient; i++){
+        if(!strcmp(listName[i],name) && i!=nb_sender){
+            
+            strcpy(TableFile[*nbFile][0],listName[nb_sender]);
+            strcpy(TableFile[*nbFile][1],listName[i]);
+            strcpy(TableFile[*nbFile][2],file);
+            strcpy(TableFile[*nbFile][3],"LL");
+            *nbFile ++;
+
+            char buff[1025];
+            strcat(buff,Success);
+            strcat(buff,listName[nb_sender]);
+            send(Csocket[i],buff,strlen(buff),0);
+            send(Csocket[nb_sender],"Now, wait your friend to accept or decline",43,0);
+            
+            break;
+        } 
+    }
+
+    if(!check){
+        send(socket,Fail,strlen(Fail),0);
+    }
+}
+
+
 
 void SendPrivateMe(int socket,char * name,char * msg,char ** listName,int * Csocket,int maxClient, int nb_sender){
     int check=0;
@@ -102,6 +140,16 @@ int main(int argc , char *argv[])
     char name[NAMESIZE+3];
     char msg[1025];
     int number_curr_users = 0;
+
+    int number_file_wait = 0;
+    int maxFileWait = MaxFile;
+    char * TableFile [maxFileWait][4];
+
+    for (int i = 0; i<maxFileWait; i++){
+        for(int k = 0;k<4;k++){
+            TableFile[i][k] = malloc(sizeof(char)*1025);
+        }
+    }
      
     char buffer[1025];  //data buffer of 1K
     char * TableName[max_clients];
@@ -320,6 +368,37 @@ int main(int argc , char *argv[])
                             send(sd,cmd,strlen(cmd),0);
                         }
                         else SendPrivateMe(sd,MP_name,MP_msg,TableName,client_socket,number_curr_users,i);
+                    }
+
+                    else if(!strcmp(ptr,"/file")){
+                        char MP_name[NAMESIZE];
+                        char MP_file[1025];
+                        int flag =0;
+
+                        bzero(MP_file,1025);
+
+                        ptr = strtok(NULL,delim);
+                        if(!ptr) flag=1;
+                        else strcpy(MP_name,ptr);
+
+                        ptr = strtok(NULL,delim);
+                        if(!ptr) flag=1;
+                        else strcpy(MP_file,ptr);
+                            
+                    
+
+                        if (DEBUG) printf("private file: %s\n",MP_file);
+
+                        if(flag) {
+                            char * cmd = "command: /file <name> <file>";
+                            send(sd,cmd,strlen(cmd),0);
+                        }
+                        else {
+                            if(number_file_wait<maxFileWait)
+                                SendFile(sd,MP_name,MP_file,TableName,client_socket,number_curr_users,i,TableFile,&number_file_wait);
+                            else
+                                send(sd,"there are too many File in waitlist",36,0);
+                        }
                     }
 
                     else if(!strcmp(msg,"@all")){
