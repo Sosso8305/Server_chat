@@ -72,7 +72,7 @@ int main(int argc , char *argv[])
     int master_socket , addrlen , new_socket , client_socket[30] , max_clients = 30 , activity, i , valread , sd;
 	int max_sd;
     struct sockaddr_in address;
-    char name[NAMESIZE];
+    char name[NAMESIZE+3];
     char msg[1025];
     int number_curr_users = 0;
      
@@ -163,7 +163,7 @@ int main(int argc , char *argv[])
    
         if ((activity < 0) && (errno!=EINTR)) 
         {
-            printf("select error");
+            printf("select error\n");
         }
          
         //If something happened on the master socket , then its an incoming connection
@@ -195,7 +195,6 @@ int main(int argc , char *argv[])
                     client_socket[i] = new_socket;
                     number_curr_users++;
                     printf("Adding to list of sockets as %d\n" , i);
-					//strcpy(TableName[i],"User");
 					break;
                 }
             }
@@ -226,7 +225,7 @@ int main(int argc , char *argv[])
                     //Close the socket and mark as 0 in list for reuse
                     close( sd );
                     client_socket[i] = 0;
-                    TableName[i] =NULL;
+                    bzero(TableName[i],NAMESIZE);
                     number_curr_users--;
                 }
                  
@@ -240,7 +239,8 @@ int main(int argc , char *argv[])
                     char msg2[1025] ;
                     strcpy(msg2,msg);
                     char * ptr=strtok(msg2,delim);
-                    
+
+                    printf("recievd n°%i: %s\n",i,msg);
                     
 
                     if(!strcmp(msg,"/list")){
@@ -283,9 +283,10 @@ int main(int argc , char *argv[])
                      
                     else {
                         
+                        
                         bzero(name,NAMESIZE);
                         bzero(buffer,1025);
-                        strcat(name,TableName[i]);
+                        strcpy(name,TableName[i]);
                         strcat(name,": ");
                         strcat(buffer,name);
                         strcat(buffer,msg);
