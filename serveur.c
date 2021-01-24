@@ -17,6 +17,33 @@
 #define FALSE  0
 #define PORT 8888
 #define NAMESIZE 10
+#define DEBUG 1
+
+void SendPrivateMe(int socket,char * name,char * msg,char ** listName,int * Csocket,int maxClient, int nb_sender){
+    int check=0;
+    char * Fail ="Your friend don't exist or it's you";
+    //char * Success = "MSG send";
+
+
+    for(int i = 0; i<maxClient; i++){
+        if(!strcmp(listName[i],name) && i!=nb_sender){
+            char buff[1025];
+            bzero(buff,1025);
+            strcat(buff,"(private)");
+            strcat(buff,listName[nb_sender]);
+            strcat(buff,": ");
+            strcat(buff,msg);
+            send(Csocket[i],buff,strlen(buff),0);
+            check=1;
+            //send(socket,Success,strlen(Success),0);  // pas besoin de s'envoyer une confirmation pour un msg pour les fichier suremment 
+            break;
+        } 
+    }
+
+    if(!check){
+        send(socket,Fail,strlen(Fail),0);
+    }
+}
 
 void ChangeName(int socket,char * name, char ** listName, int maxClient,int numero_tab){
     char * Success = "Change name is a success      ";
@@ -240,14 +267,14 @@ int main(int argc , char *argv[])
                     strcpy(msg2,msg);
                     char * ptr=strtok(msg2,delim);
 
-                    printf("recievd n°%i: %s\n",i,msg);
+                    if(DEBUG) printf("recievd n°%i: %s\n",i,msg);
                     
 
                     if(!strcmp(msg,"/list")){
                         puts("User's list: ");
                         bzero(buffer,1025);
                         for (i= 0; i < number_curr_users; i++){
-                            printf("%s\n",TableName[i]);
+                            if(DEBUG) printf("%s\n",TableName[i]);
                             strcat(buffer,TableName[i]);
                             strcat(buffer,"\n");
                         }
@@ -261,6 +288,38 @@ int main(int argc , char *argv[])
                             send(sd,cmd,strlen(cmd),0);
                         }
                         else ChangeName(sd,ptr,TableName,number_curr_users,i);
+                    }
+
+
+                    else if(!strcmp(ptr,"/me")){
+                        char MP_name[NAMESIZE];
+                        char MP_msg[1025];
+                        int flag =0;
+
+                        bzero(MP_msg,1025);
+
+                        ptr = strtok(NULL,delim);
+                        if(!ptr) flag=1;
+                        else strcpy(MP_name,ptr);
+
+                        ptr = strtok(NULL,delim);
+                        if(!ptr) flag=1;
+                        else {
+                            while(ptr != NULL){
+                                strcat(MP_msg,ptr);
+                                strcat(MP_msg,delim);
+                                ptr = strtok(NULL,delim);
+                            }
+                            
+                        }
+
+                        if (DEBUG) printf("private msg: %s\n",MP_msg);
+
+                        if(flag) {
+                            char * cmd = "command: /me <name> <msg>";
+                            send(sd,cmd,strlen(cmd),0);
+                        }
+                        else SendPrivateMe(sd,MP_name,MP_msg,TableName,client_socket,number_curr_users,i);
                     }
 
                     else if(!strcmp(msg,"@all")){

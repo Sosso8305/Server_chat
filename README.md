@@ -8,6 +8,8 @@ list des commande:
 
 /nick <name> -> pour changer de prénom 
 
+/me <name> <msg> -> envoyer un message privé
+
 absorbe les mauvaise commande.
 
 @all fonctionnais il y a 2 jours ouin ouin
