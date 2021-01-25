@@ -57,6 +57,21 @@ typedef struct
 #define NAMESIZE 10
 #define MaxFile 3
 #define DEBUG 0
+#define PASSWDSIZE 50
+
+
+void Register(int socket,char * passwd,int numClient,char **TablePasswd){
+    
+    char buff[1025];
+    bzero(buff,1025);
+    
+    strncpy(TablePasswd[numClient],passwd,PASSWDSIZE);
+    strcat(buff,"(5O lettre max) Your password is ");
+    strcat(buff,TablePasswd[numClient]);
+
+    send(socket,buff,strlen(buff),0);
+
+}
 
 void error(char* msg){
 	perror(msg);
@@ -326,10 +341,12 @@ int main(int argc , char *argv[])
      
     char buffer[1025];  //data buffer of 1K
     char * TableName[max_clients];
+    char * TablePasswd[max_clients];
 
     //init tableName
     for (int i = 0; i<max_clients; i++){
         TableName[i] = malloc(sizeof(char)*NAMESIZE);
+        TablePasswd[i] = malloc(sizeof(char)*PASSWDSIZE);
     }
      
     //set of socket descriptors
@@ -513,6 +530,16 @@ int main(int argc , char *argv[])
                         }
                         else ChangeName(sd,ptr,TableName,number_curr_users,i);
                     }
+
+                    else if(!strcmp(ptr,"/register")){    
+                        ptr = strtok(NULL,delim);
+                        if(!ptr) {
+                            char * cmd = "command: /register <password>";
+                            send(sd,cmd,strlen(cmd),0);
+                        }
+                        else Register(sd,ptr,i,TablePasswd);
+                    }
+
 
                     else if(!strcmp(ptr,"/date")){    
                         RequetNTP(sd);

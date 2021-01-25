@@ -8,6 +8,8 @@ list des commande:
 
 /date -> pour obtenir la date via "fr.pool.ntp.org"
 
+/register <passwd> -> pour enregiter votre mot de passe
+
 /nick <name> -> pour changer de prénom 
 
 /me <name> <msg> -> envoyer un message privé
@@ -20,7 +22,7 @@ list des commande:
 
 L'envoie de fichier ok mais tu coté server la taille est limité (comme un vrai serveur pour eviter les transaaction de trop grosse donné cf Discord);
 
-absorbe les mauvaise commande.
+absorbe les mauvaise commande et renvoie que la commande n'exite pas.
 
 @all fonctionnais mais des fois pas accepter car j'ai des problemes,
 Donc on affiche en plus *Beep* en rouge
