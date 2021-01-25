@@ -6,6 +6,8 @@ list des commande:
 
 /list -> pour obtenir la list des utilisateurs
 
+/date -> pour obtenir la date via "fr.pool.ntp.org"
+
 /nick <name> -> pour changer de prénom 
 
 /me <name> <msg> -> envoyer un message privé

@@ -109,7 +109,7 @@ int main(int argc, char const *argv[])
             strcpy(msg2,buff);
             char * ptr=strtok(msg2,delim);
 
-            printf("debug: %s\n",buff);
+            if (DEBUG) printf("debug: %s\n",buff);
 
             if(!strcmp(buff,"Beep")) {
                 system("echo -e \\a");  // marche pas tout le temps

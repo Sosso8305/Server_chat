@@ -12,6 +12,44 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros
+#include <netdb.h>
+#include <time.h>
+
+#define SET_LI(packet,li) (packet.li_vn_mode |= (li << 6))
+#define SET_VN(packet,vn) (packet.li_vn_mode |= (vn << 3))
+#define SET_MODE(packet,mode) (packet.li_vn_mode |= (mode << 0))
+#define NTP_TIMESSTAMP_DELTA 2208988800ull
+
+typedef struct
+{
+
+    uint8_t li_vn_mode;      // Eight bits. li, vn, and mode.
+    // li.   Two bits.   Leap indicator.
+    // vn.   Three bits. Version number of the protocol.
+    // mode. Three bits. Client will pick mode 3 for client.
+
+    uint8_t stratum;         // Eight bits. Stratum level of the local clock.
+    uint8_t poll;            // Eight bits. Maximum interval between successive messages.
+    uint8_t precision;       // Eight bits. Precision of the local clock.
+
+    uint32_t rootDelay;      // 32 bits. Total round trip delay time.
+    uint32_t rootDispersion; // 32 bits. Max error aloud from primary clock source.
+    uint32_t refId;          // 32 bits. Reference clock identifier.
+
+    uint32_t refTm_s;        // 32 bits. Reference time-stamp seconds.
+    uint32_t refTm_f;        // 32 bits. Reference time-stamp fraction of a second.
+
+    uint32_t origTm_s;       // 32 bits. Originate time-stamp seconds.
+    uint32_t origTm_f;       // 32 bits. Originate time-stamp fraction of a second.
+
+    uint32_t rxTm_s;         // 32 bits. Received time-stamp seconds.
+    uint32_t rxTm_f;         // 32 bits. Received time-stamp fraction of a second.
+
+    uint32_t txTm_s;         // 32 bits and the most important field the client cares about. Transmit time-stamp seconds.
+    uint32_t txTm_f;         // 32 bits. Transmit time-stamp fraction of a second.
+
+} ntp_packet;
+
  
 #define TRUE   1
 #define FALSE  0
@@ -19,6 +57,58 @@
 #define NAMESIZE 10
 #define MaxFile 3
 #define DEBUG 0
+
+void error(char* msg){
+	perror(msg);
+	exit(EXIT_FAILURE);
+	
+}
+
+void RequetNTP(int sd){
+    ntp_packet packet;
+	bzero(&packet,sizeof(packet));
+
+	SET_LI(packet,0);
+	SET_VN(packet,3);
+	SET_MODE(packet,3);
+
+	int sockfd= socket(AF_INET, SOCK_DGRAM, 0);
+
+	if (sockfd == -1) error("socket()");
+
+	char* host_name = "fr.pool.ntp.org";
+	
+	struct hostent *server;
+
+	server = gethostbyname(host_name);
+    if (server == NULL) perror("gethostbyname()");
+	struct sockaddr_in serv_addr;
+
+
+	bzero(&serv_addr,sizeof(serv_addr));
+	serv_addr.sin_family = AF_INET;
+	bcopy(server->h_addr_list[0], &serv_addr.sin_addr.s_addr,server->h_length);
+	serv_addr.sin_port = htons(123);
+
+
+    if(connect(sockfd, (struct sockaddr *) &serv_addr,sizeof(serv_addr)) == -1) error("connect()");
+
+    if(write(sockfd,&packet,sizeof(packet)) == -1) error("write()"); 
+
+    if(read(sockfd,&packet,sizeof(packet)) == -1) error("read()"); 
+
+    
+	long timestamp = ntohl(packet.txTm_s);
+
+
+    time_t date = timestamp -NTP_TIMESSTAMP_DELTA;
+
+    printf("DATE: %s",ctime(&date));
+    send(sd,ctime(&date),strlen(ctime(&date)),0);
+
+    close(sockfd);
+
+}
 
 void SendFile(char * name,char * file,char ** listName,int * Csocket,int maxClient, int nb_sender, char * TableFile[MaxFile][5],int *nbFile){
     int check=0;
@@ -246,7 +336,7 @@ int main(int argc , char *argv[])
     fd_set readfds;
      
     //a message
-    char *message = "Chat Server v2.0 \r\n";
+    char *message = "Chat Server v3.0  --->  https://github.com/Sosso8305/Server_chat\r\n";
  
     //initialise all client_socket[] to 0 so not checked
     for (i = 0; i < max_clients; i++) 
@@ -422,6 +512,10 @@ int main(int argc , char *argv[])
                             send(sd,cmd,strlen(cmd),0);
                         }
                         else ChangeName(sd,ptr,TableName,number_curr_users,i);
+                    }
+
+                    else if(!strcmp(ptr,"/date")){    
+                        RequetNTP(sd);
                     }
 
 
