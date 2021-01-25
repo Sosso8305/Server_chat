@@ -60,14 +60,46 @@ typedef struct
 #define PASSWDSIZE 50
 
 
-void Register(int socket,char * passwd,int numClient,char **TablePasswd){
+void ForceName(int socket,char * name,char* passwd,char ** TableName, char *TablePasswd[30][2],int MaxClient,int numClient){
+    
+    char * Success = "Change name is a success      ";
+    char * Fail = "Bad password";
+    int check = 0;
+
+    for (int i = 0;i<MaxClient; i++){
+        if(!strcmp(TablePasswd[i][0],name)){
+            if(!strcmp(TablePasswd[i][1],passwd)){
+                for (int l = 0;i<MaxClient; l++){
+                    if(!strcmp(TableName[l],name)){
+                        strcpy(TableName[l],"voleur");
+                    }
+                }
+
+                strcpy(TableName[numClient],name);
+                send(socket,Success,strlen(Success),0);
+                check=1;
+                break;
+            }
+        }
+    }
+
+    if(!check){
+        send(socket,Fail,strlen(Fail),0);
+    }
+
+    
+}
+
+
+void Register(int socket,char * passwd,int numClient,char *TablePasswd[30][2],char** TableName){
     
     char buff[1025];
     bzero(buff,1025);
     
-    strncpy(TablePasswd[numClient],passwd,PASSWDSIZE);
+    strncpy(TablePasswd[numClient][0],TableName[numClient],NAMESIZE);
+    strncpy(TablePasswd[numClient][1],passwd,PASSWDSIZE);
     strcat(buff,"(5O lettre max) Your password is ");
-    strcat(buff,TablePasswd[numClient]);
+    strcat(buff,TablePasswd[numClient][1]);
 
     send(socket,buff,strlen(buff),0);
 
@@ -341,12 +373,14 @@ int main(int argc , char *argv[])
      
     char buffer[1025];  //data buffer of 1K
     char * TableName[max_clients];
-    char * TablePasswd[max_clients];
+    char * TablePasswd[max_clients][2];
 
-    //init tableName
+    //init table
     for (int i = 0; i<max_clients; i++){
         TableName[i] = malloc(sizeof(char)*NAMESIZE);
-        TablePasswd[i] = malloc(sizeof(char)*PASSWDSIZE);
+
+        TablePasswd[i][0] = malloc(sizeof(char)*NAMESIZE);
+        TablePasswd[i][1] = malloc(sizeof(char)*PASSWDSIZE);
     }
      
     //set of socket descriptors
@@ -528,8 +562,18 @@ int main(int argc , char *argv[])
                             char * cmd = "command: /nick <name>";
                             send(sd,cmd,strlen(cmd),0);
                         }
-                        else ChangeName(sd,ptr,TableName,number_curr_users,i);
+                        else {
+                            char name[NAMESIZE];
+                            strncpy(name,ptr,NAMESIZE);
+                            ptr =  strtok(NULL,delim);  
+
+                            if(!ptr)
+                                ChangeName(sd,name,TableName,number_curr_users,i);
+                            else
+                                ForceName(sd,name,ptr,TableName,TablePasswd,number_curr_users,i);
+                        }
                     }
+
 
                     else if(!strcmp(ptr,"/register")){    
                         ptr = strtok(NULL,delim);
@@ -537,7 +581,7 @@ int main(int argc , char *argv[])
                             char * cmd = "command: /register <password>";
                             send(sd,cmd,strlen(cmd),0);
                         }
-                        else Register(sd,ptr,i,TablePasswd);
+                        else Register(sd,ptr,i,TablePasswd,TableName);
                     }
 
 

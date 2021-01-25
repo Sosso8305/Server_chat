@@ -34,6 +34,7 @@ void stop(char* msg,int FD){
 
 void Name(int socket,char * name){
     char * Fail = "name already used, check /list";
+    char * Fail2 = "Bad password";
     char * nick ="/nick ";
     char Buff[BUFSIZE];
     printf("Name (max %d lettre):",NAMESIZE-3);
@@ -48,7 +49,7 @@ void Name(int socket,char * name){
     int n = recv(socket,Buff,31,0);
     Buff[n]='\0';
 
-    if( !strncmp(Buff,Fail,strlen(Fail)) ){
+    if( !strncmp(Buff,Fail,strlen(Fail)) || !strncmp(Buff,Fail2,strlen(Fail))){
         puts("Name already used");
         Name(socket,name);
     }

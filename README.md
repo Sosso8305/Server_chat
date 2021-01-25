@@ -12,6 +12,8 @@ list des commande:
 
 /nick <name> -> pour changer de prénom 
 
+/nick <name> <passwd>-> pour recupére son pseudo prénom  (pour le moment core dump)
+
 /me <name> <msg> -> envoyer un message privé
 
 /file <name> <fileSRC> -> envoie une notification à <name> qu'on veut lui envoyer un fichier 
