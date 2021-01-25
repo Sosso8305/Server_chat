@@ -113,12 +113,32 @@ int main(int argc, char const *argv[])
                 char * ptr=strtok(msg2,delim);
                 int fd,n;
 
-                if ( (fd = open(ptr,O_RDONLY)) == -1) perror("open src");
+                if(!strcmp(ptr,"open")){
+                    
+                    char * ptr=strtok(msg2,delim);
 
-                while ((n = read(fd,buff,BUFSIZE))){
-                    send(sockfd,buff,n,0);
+                    if ( (fd = open(ptr,O_RDONLY)) == -1) perror("open open");
+
+                    while ((n = read(fd,buff,BUFSIZE))){
+                        send(sockfd,buff,n,0);
+
+                    }
+                }
+                else if(!strcmp(ptr,"write")){
+                    char * ptr=strtok(msg2,delim);
+
+                    if ( (fd= open(ptr,O_WRONLY | O_CREAT | O_TRUNC, 0666)) == -1) perror("open write");
+                    
+                    while((n = recv(sockfd,buff,BUFSIZE-1,0))){
+                        buff[n]='\0';
+                        write(fd,buff,BUFSIZE);
+                    }
+
 
                 }
+
+                close(fd);
+
             }
             
             else printf("\n%s\n",buff);

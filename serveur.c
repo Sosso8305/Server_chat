@@ -20,10 +20,10 @@
 #define MaxFile 3
 #define DEBUG 0
 
-void SendFile(int socket,char * name,char * file,char ** listName,int * Csocket,int maxClient, int nb_sender, char * TableFile[MaxFile][4],int * nbFile){
+void SendFile(char * name,char * file,char ** listName,int * Csocket,int maxClient, int nb_sender, char * TableFile[MaxFile][5],int * nbFile){
     int check=0;
     char * Fail ="Your friend don't exist or it's you";
-    char * Success = "Send /accept or /decline with a name ";
+    char * Success = "Send /accept or /decline  ";
 
      for (int i = 0; i<MaxFile; i++){
         bzero(TableFile[*nbFile][i],1025);
@@ -34,25 +34,99 @@ void SendFile(int socket,char * name,char * file,char ** listName,int * Csocket,
     for(int i = 0; i<maxClient; i++){
         if(!strcmp(listName[i],name) && i!=nb_sender){
             
-            strcpy(TableFile[*nbFile][0],listName[nb_sender]);
-            strcpy(TableFile[*nbFile][1],listName[i]);
-            strcpy(TableFile[*nbFile][2],file);
-            strcpy(TableFile[*nbFile][3],"LL");
-            *nbFile ++;
+            strcpy(TableFile[*nbFile][0],listName[nb_sender]); //src
+            strcpy(TableFile[*nbFile][1],listName[i]); //dest
+            strcpy(TableFile[*nbFile][2],file); //filesrc
+            strcpy(TableFile[*nbFile][3],"LL"); //état
+            nbFile ++;
 
             char buff[1025];
+            bzero(buff,1025);
+
             strcat(buff,Success);
             strcat(buff,listName[nb_sender]);
+            strcat(buff," <fileDEST>");
             send(Csocket[i],buff,strlen(buff),0);
             send(Csocket[nb_sender],"Now, wait your friend to accept or decline",43,0);
+
+            check = 1;
             
             break;
         } 
     }
 
     if(!check){
-        send(socket,Fail,strlen(Fail),0);
+        send(Csocket[nb_sender],Fail,strlen(Fail),0);
     }
+}
+
+void FileETAT(char * name, char ** listName,int * Csoket,int maxClient,char * TableFile[MaxFile][5],int * nbFile,int nb_sender,char * ETAT,char * filedest ){
+   
+   int check = 0;
+
+   printf("REQUEST FILE: %s <-- %s \n",listName[nb_sender],name);
+   
+    for (int i = 0; i < MaxFile; i++){
+        if(!strcmp(listName[nb_sender],TableFile[i][1])){ //on check si on est bien la destination
+            if(!strcmp(name,TableFile[i][0])){          //on check si on a la bonne source
+                strcpy(TableFile[i][3],ETAT);
+                strcpy(TableFile[i][4],filedest);
+                check = 1;
+            }
+        
+        }
+    }
+
+    if (!check)
+        send(Csoket[nb_sender],"There are not file in waitlist",31,0);
+
+}
+
+void Manager_File(char **listName,int *Csoket, int maxClient,char * TableFile[MaxFile][5],int * nbFile){
+
+    printf("bug :%i\n",*nbFile);
+    for(int i = 0; i< *nbFile; i++){
+
+        puts("enterrrrr!!!!!!!");
+
+        if(!strcmp(TableFile[i][3],"NO")){
+            puts("Transfet cancelled");
+            for(int k = 0; k<5; k++){
+                bzero(TableFile[i][k],1025);
+                nbFile--;
+            }
+        }
+        else if(!strcmp(TableFile[i][3],"OK")){
+            int sender,reciver;
+            puts("Send files ...");
+
+            for(int l = 0; l<maxClient; l++){
+                if(!strcmp(TableFile[i][0],listName[l])) sender = l;
+                if(!strcmp(TableFile[i][1],listName[l])) reciver = l;
+            }
+
+            char buffS[1025];
+            char buffR[1025];
+
+            strcat(buffS,"/file open ");
+            strcat(buffR,"/file write ");
+            strcat(buffS,TableFile[i][0]);
+            strcat(buffR,TableFile[i][4]);
+
+            send(Csoket[reciver],buffR,strlen(buffR),0);
+            send(Csoket[sender],buffS,strlen(buffS),0);
+
+            int n;
+            while( (n = recv(Csoket[sender],buffS,strlen(buffS),0)) ){
+                send(Csoket[reciver],buffS,strlen(buffS),0);
+            }
+            
+
+        }
+
+    }
+
+
 }
 
 
@@ -143,10 +217,10 @@ int main(int argc , char *argv[])
 
     int number_file_wait = 0;
     int maxFileWait = MaxFile;
-    char * TableFile [maxFileWait][4];
+    char * TableFile [maxFileWait][5];
 
     for (int i = 0; i<maxFileWait; i++){
-        for(int k = 0;k<4;k++){
+        for(int k = 0;k<5;k++){
             TableFile[i][k] = malloc(sizeof(char)*1025);
         }
     }
@@ -282,6 +356,9 @@ int main(int argc , char *argv[])
              
             puts("Welcome message sent successfully");
         }
+
+
+        Manager_File(TableName,client_socket,number_curr_users,TableFile,&number_file_wait);
          
         //else its some IO operation on some other socket :)
         for (i = 0; i < max_clients; i++) 
@@ -395,10 +472,47 @@ int main(int argc , char *argv[])
                         }
                         else {
                             if(number_file_wait<maxFileWait)
-                                SendFile(sd,MP_name,MP_file,TableName,client_socket,number_curr_users,i,TableFile,&number_file_wait);
+                                SendFile(MP_name,MP_file,TableName,client_socket,number_curr_users,i,TableFile,&number_file_wait);
                             else
                                 send(sd,"there are too many File in waitlist",36,0);
                         }
+                    }
+
+                    else if(!strcmp(ptr,"/decline")){
+                        ptr = strtok(NULL,delim);
+
+                        if(!ptr) {
+                            char * cmd = "command: /decline <name>";
+                            send(sd,cmd,strlen(cmd),0);
+                        }
+
+                        else FileETAT(ptr,TableName,client_socket,number_curr_users,TableFile,&number_file_wait,i,"NO","");
+                    
+                    }
+
+                    else if(!strcmp(ptr,"/accept")){
+                        char F_name[NAMESIZE];
+                        char F_file[1025];
+                        int flag =0;
+
+                        bzero(F_file,1025);
+
+                        ptr = strtok(NULL,delim);
+                        if(!ptr) flag=1;
+                        else strcpy(F_name,ptr);
+
+                        ptr = strtok(NULL,delim);
+                        if(!ptr) flag=1;
+                        else strcpy(F_file,ptr);
+
+
+                        if(flag) {
+                            char * cmd = "command: /accept <name> <file_destination>";
+                            send(sd,cmd,strlen(cmd),0);
+                        }
+
+                        else FileETAT(F_name,TableName,client_socket,number_curr_users,TableFile,&number_file_wait,i,"OK",F_file);
+                    
                     }
 
                     else if(!strcmp(msg,"@all")){
