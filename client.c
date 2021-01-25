@@ -14,6 +14,7 @@
 #define PORT 8888
 #define BUFSIZE  512
 #define NAMESIZE 10
+#define DEBUG 0
 
 void isEnd(char *msg, int * END){
     if(strcmp(msg,"exit") == 0){
@@ -97,6 +98,7 @@ int main(int argc, char const *argv[])
         }
         else{
             //fils
+            bzero(buff,BUFSIZE);
             int n =recv(sockfd,buff,BUFSIZE,0);
             if (n == -1)  stop("recv",sockfd);
             if (n == 0) break;
@@ -107,15 +109,23 @@ int main(int argc, char const *argv[])
             strcpy(msg2,buff);
             char * ptr=strtok(msg2,delim);
 
-            if(!strcmp(buff,"Beep")) putchar('\a');
+            printf("debug: %s\n",buff);
+
+            if(!strcmp(buff,"Beep")) {
+                system("echo -e \\a");  // marche pas tout le temps
+                printf("\e[0;31m");
+                printf("*Beeep*\n");
+                printf("\e[0;00m");
+
+            }
 
             else if(!strcmp(ptr,"/file")){
-                char * ptr=strtok(msg2,delim);
+                char * ptr=strtok(NULL,delim);
                 int fd,n;
 
                 if(!strcmp(ptr,"open")){
-                    
-                    char * ptr=strtok(msg2,delim);
+                    puts("enter /file open\n");
+                    char * ptr=strtok(NULL,delim);
 
                     if ( (fd = open(ptr,O_RDONLY)) == -1) perror("open open");
 
@@ -123,13 +133,15 @@ int main(int argc, char const *argv[])
                         send(sockfd,buff,n,0);
 
                     }
+                    puts("End to Send");
                 }
                 else if(!strcmp(ptr,"write")){
-                    char * ptr=strtok(msg2,delim);
+                    puts("enter /file write\n");
+                    char * ptr=strtok(NULL,delim);
 
                     if ( (fd= open(ptr,O_WRONLY | O_CREAT | O_TRUNC, 0666)) == -1) perror("open write");
                     
-                    while((n = recv(sockfd,buff,BUFSIZE-1,0))){
+                    while((n = read(sockfd,buff,BUFSIZE-1))){
                         buff[n]='\0';
                         write(fd,buff,BUFSIZE);
                     }

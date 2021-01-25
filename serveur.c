@@ -20,7 +20,7 @@
 #define MaxFile 3
 #define DEBUG 0
 
-void SendFile(char * name,char * file,char ** listName,int * Csocket,int maxClient, int nb_sender, char * TableFile[MaxFile][5],int * nbFile){
+void SendFile(char * name,char * file,char ** listName,int * Csocket,int maxClient, int nb_sender, char * TableFile[MaxFile][5],int *nbFile){
     int check=0;
     char * Fail ="Your friend don't exist or it's you";
     char * Success = "Send /accept or /decline  ";
@@ -38,7 +38,7 @@ void SendFile(char * name,char * file,char ** listName,int * Csocket,int maxClie
             strcpy(TableFile[*nbFile][1],listName[i]); //dest
             strcpy(TableFile[*nbFile][2],file); //filesrc
             strcpy(TableFile[*nbFile][3],"LL"); //état
-            nbFile ++;
+            *nbFile = *nbFile +1;
 
             char buff[1025];
             bzero(buff,1025);
@@ -60,7 +60,7 @@ void SendFile(char * name,char * file,char ** listName,int * Csocket,int maxClie
     }
 }
 
-void FileETAT(char * name, char ** listName,int * Csoket,int maxClient,char * TableFile[MaxFile][5],int * nbFile,int nb_sender,char * ETAT,char * filedest ){
+void FileETAT(char * name, char ** listName,int * Csoket,int maxClient,char * TableFile[MaxFile][5],int nb_sender,char * ETAT,char * filedest ){
    
    int check = 0;
 
@@ -84,16 +84,16 @@ void FileETAT(char * name, char ** listName,int * Csoket,int maxClient,char * Ta
 
 void Manager_File(char **listName,int *Csoket, int maxClient,char * TableFile[MaxFile][5],int * nbFile){
 
-    printf("bug :%i\n",*nbFile);
+    if (DEBUG) printf("bug :%i\n",*nbFile);
+    
     for(int i = 0; i< *nbFile; i++){
 
-        puts("enterrrrr!!!!!!!");
 
         if(!strcmp(TableFile[i][3],"NO")){
             puts("Transfet cancelled");
             for(int k = 0; k<5; k++){
                 bzero(TableFile[i][k],1025);
-                nbFile--;
+                *nbFile = *nbFile -1;
             }
         }
         else if(!strcmp(TableFile[i][3],"OK")){
@@ -108,17 +108,26 @@ void Manager_File(char **listName,int *Csoket, int maxClient,char * TableFile[Ma
             char buffS[1025];
             char buffR[1025];
 
+            bzero(buffR,1025);
+            bzero(buffS,1025);
             strcat(buffS,"/file open ");
             strcat(buffR,"/file write ");
-            strcat(buffS,TableFile[i][0]);
+            strcat(buffS,TableFile[i][2]);
             strcat(buffR,TableFile[i][4]);
 
             send(Csoket[reciver],buffR,strlen(buffR),0);
             send(Csoket[sender],buffS,strlen(buffS),0);
 
             int n;
-            while( (n = recv(Csoket[sender],buffS,strlen(buffS),0)) ){
-                send(Csoket[reciver],buffS,strlen(buffS),0);
+            (n = read(Csoket[sender],buffS,strlen(buffS))) ;
+            send(Csoket[reciver],buffS,n,0);
+            
+
+            puts("Send Success...");
+
+            for(int k = 0; k<5; k++){
+                bzero(TableFile[i][k],1025);
+                *nbFile = *nbFile -1;
             }
             
 
@@ -471,8 +480,9 @@ int main(int argc , char *argv[])
                             send(sd,cmd,strlen(cmd),0);
                         }
                         else {
-                            if(number_file_wait<maxFileWait)
+                            if(number_file_wait<maxFileWait){
                                 SendFile(MP_name,MP_file,TableName,client_socket,number_curr_users,i,TableFile,&number_file_wait);
+                            }
                             else
                                 send(sd,"there are too many File in waitlist",36,0);
                         }
@@ -486,7 +496,7 @@ int main(int argc , char *argv[])
                             send(sd,cmd,strlen(cmd),0);
                         }
 
-                        else FileETAT(ptr,TableName,client_socket,number_curr_users,TableFile,&number_file_wait,i,"NO","");
+                        else FileETAT(ptr,TableName,client_socket,number_curr_users,TableFile,i,"NO","");
                     
                     }
 
@@ -511,7 +521,7 @@ int main(int argc , char *argv[])
                             send(sd,cmd,strlen(cmd),0);
                         }
 
-                        else FileETAT(F_name,TableName,client_socket,number_curr_users,TableFile,&number_file_wait,i,"OK",F_file);
+                        else FileETAT(F_name,TableName,client_socket,number_curr_users,TableFile,i,"OK",F_file);
                     
                     }
 
